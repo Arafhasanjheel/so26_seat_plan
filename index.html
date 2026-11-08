@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seat Plan Search - Bangladesh Bank</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f4f7f6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            background-color: #fff;
+            max-width: 600px;
+            width: 100%;
+            padding: 40px 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        h2 {
+            color: #1a5c3a;
+            margin-bottom: 10px;
+            font-size: 24px;
+        }
+        
+        p.subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .search-box {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        input[type="number"] {
+            padding: 15px;
+            font-size: 18px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            outline: none;
+            transition: border-color 0.3s ease;
+        }
+
+        input[type="number"]:focus {
+            border-color: #1a5c3a;
+        }
+
+        button {
+            padding: 15px;
+            font-size: 18px;
+            background-color: #1a5c3a;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            font-weight: bold;
+        }
+
+        button:hover {
+            background-color: #12432a;
+        }
+
+        #result {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 8px;
+            display: none;
+            text-align: left;
+        }
+
+        .result-success {
+            background-color: #e8f5e9;
+            border: 1px solid #c8e6c9;
+            color: #2e7d32;
+        }
+
+        .result-error {
+            background-color: #ffebee;
+            border: 1px solid #ffcdd2;
+            color: #c62828;
+            text-align: center !important;
+        }
+
+        .result-label {
+            font-weight: bold;
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+        }
+
+        .result-value {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #222;
+        }
+        
+        .result-value:last-child {
+            margin-bottom: 0;
+        }
+
+        .footer {
+            margin-top: 40px;
+            font-size: 14px;
+            color: #777;
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>MCQ Exam Center Search</h2>
+        <p class="subtitle">Senior Officer (General) - Job ID: 26101</p>
+
+        <div class="search-box">
+            <input type="number" id="rollInput" placeholder="Enter your Roll Number" onkeypress="handleKeyPress(event)">
+            <button onclick="findCenter()">Search Center</button>
+        </div>
+
+        <div id="result"></div>
+
+        <div class="footer">
+            <p>Created by Araf Hasan Jheel (SO, ICB)</p>
+        </div>
+    </div>
+
+    <script>
+        // Data extracted from the provided images
+        const centerData = [
+            { name: "Milestone College", address: "Diabari, Turag-Dhaka", start: 100001, end: 108416 },
+            { name: "Banani Bidyaniketan School and College", address: "Road 23/A, Block-B, Banani Model Town, Dhaka", start: 108417, end: 111827 },
+            { name: "Shamsul Hoque Khan School and College (School Campus)", address: "Matuail, Demra, Jatrabari, Dhaka", start: 111828, end: 121329 },
+            { name: "Dr. Mahbubur Rahman Molla College", address: "Matuail, Demra Road, Jatrabari, Dhaka", start: 121330, end: 131608 },
+            { name: "A. K. School & College (Main Campus)", address: "Dania, Dhaka", start: 131609, end: 135226 },
+            { name: "A. K. School & College (New Campus)", address: "Dania, Dhaka", start: 135227, end: 137300 },
+            { name: "Dania College", address: "Dania, Jatrabari, Dhaka", start: 137301, end: 144132 },
+            { name: "Barnamala Adarsha High School and College", address: "Dania, Jatrabari, Dhaka-1236", start: 144133, end: 148159 },
+            { name: "Ahmed Bawany Academy School & College", address: "Armanitola, Babubazar, Dhaka", start: 148160, end: 152768 },
+            { name: "Fazlul Haque Mohila College", address: "12, Akshay Das Lane, Sutrapur, Gendaria, Dhaka", start: 152770, end: 157365 },
+            { name: "Armanitola Government High School", address: "Armanitola, Dhaka", start: 157366, end: 160449 },
+            { name: "Mirpur Bangla School and College (Boys Section)", address: "Section 11, Mirpur, Dhaka", start: 160450, end: 164456 },
+            { name: "Mirpur Bangla School and College (Girls Section)", address: "Section 6, Mirpur, Dhaka", start: 164457, end: 166402 },
+            { name: "Mirpur College", address: "Section-2, Mirpur, Dhaka", start: 166403, end: 172044 },
+            { name: "Mirpur Girls Ideal College", address: "Mirpur 10, Dhaka", start: 172045, end: 176017 },
+            { name: "Mirpur Girls Ideal Laboratory Institute", address: "Mirpur 10, Dhaka", start: 176018, end: 180049 },
+            { name: "Kadamtala Purba Basabo School & College", address: "28/3, Kadamtala, Basabo, Dhaka", start: 180051, end: 184589 },
+            { name: "Khilgaon Girls School & College", address: "Khilgaon, Dhaka", start: 184590, end: 188027 },
+            { name: "Khilgaon Govt. High School", address: "Khilgaon, Dhaka", start: 188028, end: 191465 },
+            { name: "Khilgaon Model College", address: "721/1, Block-C, Khilgaon, Dhaka", start: 191466, end: 195476 },
+            { name: "Khilgaon School and College", address: "711/C, Khilgaon, Dhaka", start: 195477, end: 199488 },
+            { name: "Model High School", address: "Khilgaon, Dhaka", start: 199489, end: 201792 },
+            { name: "Maghbazar Girls' High School", address: "Siddheswari, Ramna, Dhaka", start: 201793, end: 205219 },
+            { name: "Mohammadpur Kendriya College", address: "Nurjahan road, Mohammadpur, Dhaka", start: 205221, end: 208662 },
+            { name: "Lalmatia Girls' High School & College", address: "9/15, Block - D, Lalmatia, Dhaka", start: 208663, end: 212673 },
+            { name: "Sher-E-Bangla Nagar Govt. Girls High School", address: "Agargaon, Dhaka", start: 212674, end: 215417 },
+            { name: "Dhanmondi Govt. Boys High School", address: "03 Sobhanbagh, Mirpur Road, Dhaka", start: 215418, end: 218832 },
+            { name: "Dhanmondi Government Girls High School", address: "Dhanmondi R/A, Dhaka", start: 218833, end: 221673 },
+            { name: "Tejgaon College", address: "16, Indira Road, Farmgate, Dhaka", start: 221675, end: 230825 },
+            { name: "Tejgaon Govt. High School", address: "42, East Tejturi bajar, Tejgaon, Dhaka", start: 230826, end: 234245 },
+            { name: "Azimpur Govt. Girls School & College", address: "Azimpur, Dhaka", start: 234246, end: 237923 }
+        ];
+
+        function handleKeyPress(event) {
+            if (event.key === "Enter") {
+                findCenter();
+            }
+        }
+
+        function findCenter() {
+            const inputField = document.getElementById("rollInput");
+            const resultDiv = document.getElementById("result");
+            const roll = parseInt(inputField.value.trim());
+
+            if (isNaN(roll) || inputField.value.trim() === "") {
+                resultDiv.innerHTML = "Please enter a valid Roll Number.";
+                resultDiv.className = "result-error";
+                resultDiv.style.display = "block";
+                return;
+            }
+
+            let foundCenter = null;
+
+            for (let i = 0; i < centerData.length; i++) {
+                if (roll >= centerData[i].start && roll <= centerData[i].end) {
+                    foundCenter = centerData[i];
+                    break;
+                }
+            }
+
+            if (foundCenter) {
+                resultDiv.innerHTML = `
+                    <span class="result-label">Center Name:</span>
+                    <div class="result-value"><strong>${foundCenter.name}</strong></div>
+                    <span class="result-label">Address:</span>
+                    <div class="result-value">${foundCenter.address}</div>
+                `;
+                resultDiv.className = "result-success";
+            } else {
+                resultDiv.innerHTML = "<strong>Roll number not found.</strong><br>Please check your roll number and try again.";
+                resultDiv.className = "result-error";
+            }
+            
+            resultDiv.style.display = "block";
+        }
+    </script>
+
+</body>
+</html>
